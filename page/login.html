@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>登录</title>
+    <script src="../js/mui.min.js"></script>
+    <script src="../js/util.js"></script>
+    <link href="../css/mui.min.css" rel="stylesheet"/>
+    <style>
+    	.userField, .pwdField {
+    		margin-left: 40px;
+    		margin-right: 40px;
+    	}
+    	::-webkit-input-placeholder {
+    		color: rgba(255, 255, 255, 0.7);
+    	}
+    	.userIcon, .pwdIcon {
+    		position: absolute;left: 36px;z-index: 5;
+            background-image: url("../images/user.png");
+            background-repeat: no-repeat;
+            width: 32px;
+            height: 32px;
+            top: 340px;
+    	}
+    	.pwdIcon {
+            background-image: url("../images/eye.png");
+            top: 400px;
+    	}
+    	#loginBtn {
+    		background: #40B7EF;
+    		width: 300px;
+    		height: 40px;
+    		border: 1px solid rgba(255, 255, 255, 0.7);
+    		border-radius: 20px;
+    		margin-left: 90px;
+    		margin-top: 30px;
+    	}
+    	#loginBtn:active {
+    		background: #00A8F1 !important;
+    	}
+		#imgHeader {
+			margin: 64px 0 0 164px;
+			border: 2px solid rgba(255, 255, 255, 0.7);
+			border-radius: 50%;
+		}
+    </style>
+</head>
+<style> 
+</style>
+<body style="background: #40B7EF;"> 
+	<form >
+		<img id="imgHeader" src="../images/manHeader.jpg" width="150" height="150">
+		<div class="userField">
+			<i class="userIcon" ></i>
+			<input id="userName" class="userName" style="outline: none;background: rgba(64,183,239, 0.5);
+			margin-top: 120px;
+    		color: rgba(255, 255, 255, 0.7);
+    		border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    		border-top: 0;
+    		border-left: 0;
+    		border-right: 0;
+    		padding-left: 70px;
+    		" name="id" type="text" placeholder="请输入账号">	
+		</div>
+		<div class="pwdField">
+			<i class="pwdIcon"></i>
+			<input class="pwd" style="outline: none;background: rgba(64,183,239, 0.5);
+    		color: rgba(255, 255, 255, 0.7);
+    		border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    		border-left: 0;
+    		border-top: 0;
+    		border-right: 0;
+    		padding-left: 70px;
+    		" name="pwd" type="password" placeholder="请输入密码">	
+		</div>
+		<button type="button" id="loginBtn">
+			<span style="color: rgba(255, 255, 255, 0.7);letter-spacing: 4px;">登录</span>
+		</button>
+	</form>
+</body>
+	<script type="text/javascript" charset="utf-8">
+		mui.init ({
+			preloadPages: [
+				{
+				  url: 'index.html',
+				  id: 'index', //预加载页面的子页面
+				  subpages: [
+					  {
+						  url: 'home/home.html',
+						  id: 'tab_home',
+						  styles: {
+							  top:'0px', 
+							  bottom:'50px' 
+						  }
+					  }
+				  ]
+				}
+			]
+		});
+		mui.plusReady(function () {
+			mui('#loginBtn')[0].addEventListener('tap', function () { 
+			var userName = mui("input[name='id']")[0].value;
+			var pwd = mui("input[name='pwd']")[0].value;
+			if (userName == '') {
+				mui.alert('请输入账号', '警告');
+				return;
+			}
+			if (pwd == '') {
+				mui.alert('请输入密码', '警告');
+				return;
+			}
+			if (!/^[0-9]+$/.test(userName)) {
+				mui.alert('请输入数字账号', '警告');
+				return;
+			}
+			mui.ajax(getHttpUtrlAndPort() + 'checkLogin', {
+				data: {id: userName, pwd: pwd, isApp: 1},
+				dataType: 'json',
+				success: function (res) { 
+					if (res.success) {
+						plus.storage.setItem('memberId', res.currentAppMember.id.toString());
+						plus.storage.setItem("cookie_id", 'JSESSIONID=' + res.cookie_id.toString());
+						mui.openWindow({
+						  url: 'index.html',
+						  id: 'index',
+						  styles: {                            
+						    titleNView: {                      
+						      titleText: "首页",                
+						      titleColor: "#000000",             
+						      titleSize: "17px",                
+						      backgroundColor: "#F7F7F7",       
+						      progress: {                        
+						        color: "#00A8F1",                 
+						        height: "2px"                      
+						      },
+						      splitLine: {                       
+						        color: "#CCCCCC",                
+						        height: "1px"                    
+						      }
+						    }
+						  },
+						  creatNew: false
+						});
+					}else {
+						mui.alert(res.errMsg); 
+					}
+				},
+				error: function (res) {
+					mui.toast('网络连接失败');
+				}
+			});
+		});
+		});
+		
+		document.getElementById('userName').addEventListener('blur', function () {
+			var memberId = mui('#userName')[0].value;
+			if (memberId == '') 
+				return;
+			mui.get(getHttpUtrlAndPort() + 'getMemberImg', {'memberId': memberId}, function (result) {
+				mui('#imgHeader')[0].src = 'data:image/png;base64,'.concat(result);
+			}, 'json');
+			
+		});
+    </script>
+    <style>
+    	::-webkit-input-placeholder {
+    		color: rgba(255, 255, 255, 0.7);
+    	}
+    	.userName, .pwd {
+    		background: rgba(64,183,239, 0.5)
+    		color: rgba(255, 255, 255, 0.7);
+    		border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    		border-left: 0;
+    		border-right: 0;
+    	}
+    </style>
+</html>

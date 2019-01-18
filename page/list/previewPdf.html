@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>预览pdf</title>
+    <script src="../../js/mui.min.js"></script>
+    <script src="../../js/util.js"></script>
+    <link href="../../css/mui.min.css" rel="stylesheet"/>
+    
+    	
+</head>
+
+<body> 
+	<iframe id="pdfIframe" src='' style="width: 100%;height: min-height: 480px;"></iframe>
+	
+</body>
+	<script>
+		mui.init();
+		function plusReady(){
+			let thisWebView = plus.webview.currentWebview();
+			let fileId = thisWebView.fileId;
+			console.log("====" + fileId);
+			let httpUrlAndPort = getHttpUtrlAndPort();
+			console.log("../pdf/web/viewer.html?file="+ encodeURIComponent(httpUrlAndPort + 'previewFile?fileId=' + fileId))
+			mui('#pdfIframe')[0].src = "../pdf/web/viewer.html?file="+ encodeURIComponent('../../http://182.90.2.118:8088/previewFile?fileId=' + fileId);
+		} 
+		if(window.plus){
+			plusReady();
+		}else{
+			document.addEventListener('plusready', plusReady, false);
+		}
+		
+	</script>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>我的录音</title>
+	    <script src="../../js/mui.min.js"></script>
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+	    <script src="../../js/util.js"></script>
+	    <style>
+			span {
+				margin-left: 40px; 
+			}
+	    </style>
+	</head>
+	<body> 
+		<header class="mui-bar mui-bar-nav" style="text-align: center;padding: 14px;">
+           	我的录音
+       	</header> 
+		<div class="container">
+			<ul class="mui-table-view" style="margin-top: 50px;">
+				
+				
+			</ul>
+		</div>
+		<div style="position: fixed;top: 48%;left: 40%;" id="nullTip">无录音历史</div>
+		<div class="mui-card audioField" style="display: none;z-index: 1000;position: fixed;top: 30vh;left: 14vw;">
+			<div class="mui-card-header">预览录音</div>
+			<div class="mui-card-content" style="text-align: center;">
+				<img src="../../images/poster.jpg" style="width: 218px; height: 218px;" class="previewImg">
+				<audio id="audioId" src="" preload="auto"></audio>
+			</div>	
+			<div class="mui-card-footer">
+				<a style="margin-left: 50vw;" href="javascript:void(0)" class="mui-btn mui-btn-danger closeBtn">关闭</a>
+			</div>
+		</div>
+	</body> 
+	<script>
+		mui.init({
+			pullRefresh : {
+			container: ".container",
+			down : { 
+				style: 'circle',
+				color: '#2BD009', 
+				height: '50px',
+				range: '100px', 
+				offset: '0px', 
+				auto: false,
+				callback: function () {
+						memberId = plus.storage.getItem("memberId");
+						getRecordList(memberId, cookie_id);
+						mui('.container').pullRefresh().endPulldownToRefresh();
+						mui.toast('加载完成', {duration: 100});
+					} 
+				}
+			}
+		});
+		var httpUrlAndPort = getHttpUtrlAndPort();
+		let mask = mui.createMask(() => {});
+		function plusReady () {
+			memberId = plus.storage.getItem("memberId");
+			cookie_id = plus.storage.getItem("cookie_id");
+			getRecordList(memberId, cookie_id);
+			[].forEach.call(document.querySelectorAll('li'), function (value, index) {
+				value.addEventListener('tap', function (e) {
+					document.querySelector('#audioId').src = 
+					`${httpUrlAndPort}pushRecordStreamByName?fileName=${this.children[0].children[0].value}`;
+					setAudioShow(true);
+					document.getElementById('audioId').play();  
+				});
+			});
+			document.querySelector('.closeBtn').addEventListener('tap', () => {
+				mask.close();
+				setAudioShow(false);
+				document.querySelector('#audioId').pause(); 
+			});
+		}if (window.plus)
+			plusReady();
+		else
+			document.addEventListener('plusready', plusReady, false);
+		function getRecordList (memberId, cookie_id) {
+			let flag = isLogined();
+			if (flag <= 0) {
+				mui.alert('暂未登录无法查看', '提示');
+				setTimeout(() => {
+					mui.openWindow({
+						url: '../login.html',
+						id: 'login'
+					});
+				}, '1000');
+				return;
+			}
+			let list = [];
+			mui.ajax(`${httpUrlAndPort}getAllRecordList`, {
+				header: {"Cookie": cookie_id},
+				data: {memberId: memberId},
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					list = res.recordList;
+				},
+				error: function (e) {
+					mui.toast('获取录音列表失败');
+				}
+			});
+			let isNulled = isNull(list);
+			switch (isNulled) {
+				case true :
+					showTipDom(true);
+					break;
+				default :
+					showTipDom(false);
+					let ulDom = document.querySelector('ul');
+					while (ulDom.children.length > 0) {
+						ulDom.removeChild(ulDom.children[ulDom.children.length - 1]);
+					}
+					list.forEach((value, index, arr) => {
+						let htmlStr = `<li class="mui-table-view-cell mui-media">
+								<a href="javascript:;">
+									<input style="display: none;" value="${value.storeAddr}">
+									<img class="mui-media-object mui-pull-left" src="../../images/history.png">
+									<div class="mui-media-body">
+										录音名: ${value.name.substring(0, value.name.lastIndexOf(".amr"))}
+										<p class='mui-ellipsis'>录音时间：${formatTimeStampToStr(value.createTime)}</p>
+									</div>
+								</a>
+							</li>`;
+						document.querySelector('ul').insertAdjacentHTML('afterbegin', htmlStr);
+					});	
+			}
+		}
+		function showTipDom (version) {
+			let nullTipDom = document.querySelector('#nullTip');
+			switch (version) {
+				case true :
+					nullTipDom.style.display = 'block';
+					break;
+				default :
+					nullTipDom.style.display = 'none';
+			}
+		}
+		
+		
+		function setAudioShow (version) {
+			switch (version) {
+				case true :
+					mask.show();
+					document.querySelector(".audioField").style.display = '';
+					break;
+				default :
+					mask.close();
+					document.querySelector('.audioField').style.display = 'none';
+			}
+		}
+		
+	</script>
+</html>

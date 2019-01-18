@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>酷狗搜索结果</title>
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+	</head>
+	<style>
+		#loading3 {
+		    position: relative;
+				left: 46%; 
+				top: 300px; 
+		    width: 50px;
+		    height: 50px;
+		}
+		.demo3 {
+		    width: 4px;
+		    height: 4px;
+		    border-radius: 2px;
+		    background: #68b2ce;
+		    position: absolute;
+		    animation: demo3 linear 0.8s infinite;
+		    -webkit-animation: demo3 linear 0.8s infinite;
+		}
+		.demo3:nth-child(1){
+		    left: 24px;
+		    top: 2px;
+		    animation-delay:0s;
+		}
+		.demo3:nth-child(2){
+		    left: 40px;
+		    top: 8px;
+		    animation-delay:0.1s;
+		}
+		.demo3:nth-child(3){
+		    left: 47px;
+		    top: 24px;
+		    animation-delay:0.1s;
+		}
+		.demo3:nth-child(4){
+		    left: 40px;
+		    top: 40px;
+		    animation-delay:0.2s;
+		}
+		.demo3:nth-child(5){
+		    left: 24px;
+		    top: 47px;
+		    animation-delay:0.4s;
+		}
+		.demo3:nth-child(6){
+		    left: 8px;
+		    top: 40px;
+		    animation-delay:0.5s;
+		}
+		.demo3:nth-child(7){
+		    left: 2px;
+		    top: 24px;
+		    animation-delay:0.6s;
+		}
+		.demo3:nth-child(8){
+		    left: 8px;
+		    top: 8px;
+		    animation-delay:0.7s;
+		}
+		
+		@keyframes demo3 
+		{
+		    0%,40%,100% {transform: scale(1);}
+		    20% {transform: scale(3);}
+		}
+		@-webkit-keyframes demo3 
+		{
+		    0%,40%,100% {transform: scale(1);}
+		    20% {transform: scale(3);}
+		}
+					 
+	</style>
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-back" href="/index.html"></a>
+			<h1 class="mui-title">搜索结果</h1>
+		</header>
+		
+		<div style="margin-top: 50px;z-index: 10000;" id="loading3">
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+			<div class="demo3"></div>
+		</div>
+		<ul style="margin-top: 50px;" class="mui-table-view list">
+			
+		</ul>		
+	</body>
+	<script src="../../js/mui.js"></script> 
+	<script src="../../js/util.js"></script>
+	<script type="text/javascript">
+		function plusReady () {
+			let thisWebView = plus.webview.currentWebview();
+			let inputVal = thisWebView.searchVal;
+			let getHashUrl = `http://songsearch.kugou.com/song_search_v2?keyword=${inputVal}&
+			page=1&pagesize=30&userid=-1&clientver=&platform=WebFilter&tag=em&filter=2&iscorrection=1
+			&privilege_filter=0`;
+			let arr = [];
+			mui.ajax({
+				url: getHashUrl,
+				async: false,
+				dataType: 'json',
+				success: function (res) {
+					res.data.lists.forEach(function (value, index) { //获取hash 30条
+			if (value.FileHash != '' && value.AlbumID != '') {
+				mui.ajax('http://www.kugou.com/yy/index.php?r=play/getdata&hash=' + value.FileHash + '&album_id=' + value.AlbumID, {
+				async: false,
+				success: function (res) {
+					var obj = res;
+					Object.keys(obj).forEach((val, index) => { //循环根据hash找到playurl
+					if (val == 'img' || val == 'audio_name' || val == 'play_url' || val == 'author_name' || val == 'lyrics')
+						return false;
+					else
+						delete obj[val];
+					});
+					//let arr = [];
+					obj.play_url != '' ? arr.push(obj) : undefined;
+						
+				},
+				fail: function () {
+					console.log("获取playUrl失败");
+				}
+				});
+			} else
+				return false;
+			});
+			}
+			});
+			
+			arr.forEach((value, index) => {
+				value = JSON.parse(value);
+				let htmlString = `<li class="mui-table-view-cell mui-media">
+						<a href="javascript:;">
+								<input style="display: none" value="${value.data.lyrics}">
+								<input style="display: none" value="${value.data.play_url}">
+								<img class="mui-media-object mui-pull-left songImg" src='${value.data.img}'>
+								<div class="mui-media-body">
+										<span>${value.data.audio_name}</span>
+										<p class='mui-ellipsis'>${value.data.author_name}</p>
+								</div>
+						</a>
+				</li>`;
+				document.querySelector('.list').insertAdjacentHTML('afterbegin', htmlString);
+			});
+			mui('#loading3')[0].style.display = 'none';
+			let element = document.querySelectorAll('ul li');
+        [].forEach.call(element, function (value, index) {
+           value.addEventListener('tap', function (e) {
+						 let audio_name = this.children[0].children[3].children[0].innerText;
+						 let author_name = this.children[0].children[3].children[1].innerText;
+						 let lyrics = this.children[0].children[0].value;
+						 let img = this.children[0].children[2].src;
+						 let play_url = this.children[0].children[1].value;
+						 let info = {play_url: play_url, audio_name: audio_name, author_name: author_name, lyrics: lyrics, img: img};
+						 info = JSON.stringify(info);
+               mui.openWindow({
+								 url: 'lyrics.html',
+								 id: 'lyrics',
+								 extras: {
+									 info: info
+								 }
+							 });
+           });
+        });
+			//d
+		}
+		if(window.plus) 
+			plusReady();
+		else {
+			document.addEventListener('plusready', plusReady, false);
+		}
+			
+			
+	</script>
+</html>

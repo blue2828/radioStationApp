@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>列表</title>
+	    
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav" style="text-align: center;padding: 14px;">
+           	点播列表
+        </header>
+		<div id="container" style="margin-top: 60px;">
+			
+		</div>
+	</body>
+	<script src="../../js/mui.min.js"></script>
+	<script src="../../js/util.js"></script>
+	<script>
+		mui.init({
+		  pullRefresh : {
+			container:"#container",
+			down : { 
+			  style:'circle',
+			  color:'#2BD009', 
+			  height:'50px',
+			  range:'100px', 
+			  offset:'0px', 
+			  auto: false,
+			  callback : function () {
+				  getData();
+				  mui('#container').pullRefresh().endPulldownToRefresh();
+				  mui.toast('加载完成', {duration: 100});
+			  } 
+			}
+		  }
+		}); 
+		mui.plusReady(function () {
+			
+			
+		});
+		function getData() {
+			let container = document.querySelector("#container");
+			 while (container.children.length > 0) {
+				container.removeChild(container.children[container.children.length - 1]);
+			} 
+			
+			mui.ajax({
+				url: getHttpUtrlAndPort() + 'getAllNotBroadcastDemandList',
+				dataType: 'json',
+				async: false, 
+				success: function (res) {
+					if (JSON.stringify(res.demandList) == '[]') {
+						let htmlString = "<div id='whenNullListText' style='text-align: center;margin-top: 50%;'>无记录</div>";
+						document.querySelector("#container").insertAdjacentHTML('afterbegin', htmlString);
+						mui.toast('当前无人点播');
+						return; 
+					}
+					let dom = document.querySelector("#whenNullListText");
+					dom == undefined || dom == null || dom.length == 0 ?
+					undefined : document.querySelector("#container").removeChild(dom);
+					var arr = res.demandList.filter(function (value, index, arr) {
+						value['demandTime'] = formatTimeStampToStr(value.demandTime);
+						value['uploadDate'] = formatTimeStampToStr(value.uploadDate);
+						return arr;
+					});
+					arr.forEach((value, index) => {
+						let imgSrc = '';
+						switch (value.type) {
+							case 0 : 
+								imgSrc = '../../images/mp3.jpg';
+								break;
+							case 1 : 
+								switch (value.storeAddr.endsWith(".pdf")) {
+									case true:
+										imgSrc = '../../images/file-pdf.png';
+										break;
+									default :
+										imgSrc = '../../images/file-text.png';
+								}
+								break;
+						}
+						let info = JSON.stringify(value);
+						var reg = new RegExp('&quot;', 'g'); 
+						
+						let htmlString = `<ul class="mui-table-view">
+							<li class="mui-table-view-cell mui-media">
+								<a href="javascript:void(0);">
+									<img class="mui-media-object mui-pull-left" src='${imgSrc}'>
+									<p style="display: none;" class="valueStack">${info}</p>
+									<div class="mui-media-body">
+										点播人: ${value.userName == '' ? '无' : value.userName}  
+										<p class='mui-ellipsis'>点播时间:${value.demandTime}</p>
+									</div>
+								</a> 
+							</li>
+						</ul>`;
+						document.querySelector("#container").insertAdjacentHTML("afterbegin", htmlString);
+					});
+						
+				}
+			});
+		}
+		getData();
+		mui('body').on('tap', 'a', function () {
+			mui.openWindow({
+				url: 'preview.html',
+				extras: {
+					info: this.children[1].innerText,
+					imgSrc: this.children[0].src
+				}
+			});
+		});
+	
+	</script>
+</html>

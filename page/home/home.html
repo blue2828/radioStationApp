@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>列表</title>
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+		<style type="text/css"> 
+					#container{
+						position: relative;
+					}
+					#container span{
+						width: 5px;
+						height: 5px;
+						top: 0px;
+						position: absolute;
+						background: red;
+						-webkit-animation: bodong 0.5s infinite  ease;
+					}
+			
+					#container span:first-child{
+						left: 0px;
+						-webkit-animation-delay: .3s;
+					}
+			
+					#container span:nth-child(2){
+						left: 7px;
+						-webkit-animation-delay: .4s;
+			
+					}
+					#container span:nth-child(3){
+						left: 14px;
+							-webkit-animation-delay: .6s;
+					}
+						#container span:nth-child(4){
+						left: 21px;
+							-webkit-animation-delay: .8s;
+					}
+					#container span:nth-child(5){
+						left:28px;
+							-webkit-animation-delay: 1s;
+					}
+			
+					@-webkit-keyframes bodong{
+						0%{height: 5px; background: orangered;}
+						30%{height: 15px; background: orangered;}
+						60%{height: 20px; background: orangered;}
+						80%{height: 15px; background: orangered;}
+						100%{height: 5px; background: orangered;}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-back" href="/index.html"></a>
+			<h1 class="mui-title">首页</h1>
+		</header>
+		<img id="bg" src="../../images/musicBg.jpg" style="z-index: -1;position: fixed;top: 0;opacity: 0.5;width: 100%;">
+		<div id="dcontent" style="margin-top: 120px;margin-left: 170px;">
+			<div style="position: fixed;left: 120px;" class="mui-input-row mui-search">
+				<input style="width: 100%;height: 40px;" type="search" class="mui-input-clear search" placeholder="搜索酷狗">
+			</div>
+			<img style="margin-top: 100px;" src="../../images/audio-fill.png" class="mic_logo">
+			<br/>
+			<div id='container' style="margin: 15px 0 0 46px;display: none;">
+				<span></span>
+				<span></span>
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+			<br/><br/>
+			<div id="ptime" class="ptime" style="margin:100px 0 0 30px">00:00:00</div>
+			<img id="startBtn" style="width: 40px;height: 40px;margin-left: 20px;" src="../../images/play-circle.png">  
+			<img id="stopBtn" style="width: 40px;height: 40px;" src="../../images/poweroff.png">  
+		</div>
+	</body>
+	<script src="../../js/mui.min.js"></script> 
+	<script src="../../js/util.js"></script>
+	<script type="text/javascript">
+		mui.init({
+		pullRefresh : {
+			container:"#dcontent",
+			down : { 
+			style:'circle',
+			color:'#2BD009', 
+			height:'50px',
+			range:'100px', 
+			offset:'0px', 
+			auto: false,
+			callback : function () {
+				location.reload();
+				mui('#dcontent').pullRefresh().endPulldownToRefresh();
+			} 
+			}
+		}
+		});
+		mui('#bg')[0].height = outerHeight + 10;
+		ws = new WebSocket(getWsUtrlAndPort() + "broadcast");
+    //连接成功建立后响应
+        ws.onopen = function() {
+			console.log("连接到ws");
+        }
+    //收到服务器消息后响应
+        ws.onmessage = function(msg) {
+			msg = msg.data;
+        }
+        //连接关闭后响应
+        ws.onclose = function() {
+            ws = null;
+        }		
+		function openWs () {
+			if (ws == null || ws == undefined) {
+				ws = new WebSocket(getWsUtrlAndPort() + "broadcast");
+			}
+		}
+		function plusReady() {
+			
+			// 获取音频目录对象
+			plus.io.resolveLocalFileSystemURL('_doc/', function(entry) {
+				entry.getDirectory('audio', {
+					create: true
+				}, function(dir) {
+					gentry = dir;
+				}, function(e) {
+					console.log('Get directory "audio" failed: ' + e.message);
+				});
+			}, function(e) {
+				console.log('Resolve "_doc/" failed: ' + e.message);
+			});
+		}
+		if(window.plus) 
+			plusReady();
+		 else 
+			document.addEventListener('plusready', plusReady, false);
+		document.querySelector('.search').addEventListener('keydown', function(e) {
+			switch (e.keyCode) {
+				case 13 :
+					let inputVal = this.value;		
+					mui.openWindow({
+						url: 'mp3.html',
+						id: 'mp3',
+						extras: {
+							searchVal: inputVal
+						}
+					});
+					break;
+			}
+		});
+		
+		
+		function addVoice(path, entry) {
+			console.log("entry = " + entry.name)
+			console.log("上传前的文件名：" + entry.name);
+			
+			uploadVoice(path);
+		}
+		function uploadVoice(path) {
+			console.log("开始上传：")
+			var uploadUrl = getHttpUtrlAndPort() + "recordUpload";
+			var task = plus.uploader.createUpload(uploadUrl, {
+					method: "POST"
+				},
+				function(t, status) { //上传完成
+					if(status == 200) {
+						var data = JSON.parse(t.responseText);
+						if (data.success) {
+							mui.toast('录音文件已上传');
+						}
+						cleanHistory();
+					} else {
+						//wt.close();
+					}
+				}
+			);
+			task.addData("client", "HelloH5+");
+			task.addData("uid", getUid());
+			task.addFile(path, {
+				key: "file"
+			})
+			task.start();
+		}
+		function cleanHistory() {
+			gentry.removeRecursively(function() {
+				console.log('清空录音历史记录，操作成功！');
+			}, function(e) {
+				console.log('清空录音历史记录，操作失败：' + e.message);
+			});
+		}
+		mui('#dcontent').on('tap', '#startBtn', () => {
+			let stationList = [];
+			mui.ajax(`${getHttpUtrlAndPort()}getStation`, {
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					stationList = res.data;
+					if (stationList.length != 0) 
+						stationList = stationList[0];
+				},
+				error: function () {
+					console.log("获取电台信息失败");
+				}
+			});
+			
+			if (isLogined() <= 0) {
+				mui.alert('请先登录', '提示');
+				setTimeout(() => {
+					mui.openWindow({
+						url: '../login.html'
+					});
+				}, '800');
+				return;
+			} else if (stationList.stationState == '禁播') {
+				mui.alert('当前电台被管理员禁播，请联系管理员解除禁播');
+				return;
+			} else {
+						ws.send("学院广播电台已开播");
+						updateStation(0);
+						mui('#startBtn')[0].src = mui('#startBtn')[0].src.indexOf('play-circle.png') > -1 ? '../../images/time out.png' : '../../images/play-circle.png';
+						mui('#container')[0].style.display = 'block';
+						let timeCount = 0;
+						ri = setInterval(() => {
+							timeCount ++;
+							mui('#ptime')[0].innerText = getTimeToStr(timeCount);
+						}, '1000');
+						console.log('开始录音：');
+						r = plus.audio.getRecorder();
+						if(r == null) {
+							console.log('录音对象未获取')
+							return;
+						}
+						r.record({
+							filename: '_doc/audio/',
+							format: 'amr'
+						}, function(p) {
+							console.log('录音完成：' + p);
+							var tempFileName = p.substring(p.lastIndexOf("/") + 1);
+							var tempPath = '_doc/audio/' + tempFileName;
+							plus.io.resolveLocalFileSystemURL(tempPath, function(entry) {
+								addVoice(p, entry);
+							}, function(e) {
+								console.log('读取录音文件错误：' + e.message);
+							});
+				
+						}, function(e) {
+							console.log('录音失败：' + e.message);
+						});
+			}
+			
+		});	
+		mui('#dcontent').on('tap', '#stopBtn', () => {
+			mui('#container')[0].style.display = 'none';
+			mui('#startBtn')[0].src = '../../images/play-circle.png';
+			mui('#ptime')[0].innerText = '00:00:00'; 
+			clearInterval(ri);
+			timeCount = 0;
+			r.stop();
+			updateStation(1);
+		});
+		function getUid() {
+			return Math.floor(Math.random() * 100000000 + 10000000).toString();
+		}
+		function getTimeToStr (ts) {
+				if(isNaN(ts)) 
+					return "--:--:--";
+				var h = parseInt(ts / 3600);
+				var m = parseInt((ts % 3600) / 60);
+				var s = parseInt(ts % 60);
+				return(ultZeroize(h) + ":" + ultZeroize(m) + ":" + ultZeroize(s));
+		}
+		function ultZeroize (num) {
+			return String(num).length == 1 ? "0" + num : num;
+		}
+		function updateStation (version) { //version 0 在线 1 未在线
+			var memberId = plus.storage.getItem('memberId');
+			var currentTime = getCurrentTime();
+			var data = {stationState: version, time: currentTime, lastTimeMemberId: memberId};
+			version == 1 ? delete data.time : undefined;
+			mui.ajax(getHttpUtrlAndPort() + 'updateStationState', {
+				data: data, 
+				dataType: 'json',
+				success: function (res, status, xhr) {
+					if (res.success)
+						mui.toast('开播');
+					else 
+						mui.toast("服务器出错");
+				},
+				error: function () {
+					mui.toast('网络连接失败');
+				}
+ 			});
+		}
+	</script>
+</html>

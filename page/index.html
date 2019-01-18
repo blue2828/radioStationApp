@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title></title>
+    <script src="../js/mui.min.js"></script>
+    <link href="../css/mui.min.css" rel="stylesheet"/>
+</head>
+<body>
+	<nav class="mui-bar mui-bar-tab" id="nav">
+		<a id="tab_home" class="mui-tab-item mui-active" >
+			<span class="mui-icon mui-icon-home"></span>
+			<span class="mui-tab-label">首页</span>
+		</a>
+		<a id="tab_list" class="mui-tab-item">
+			<span class="mui-icon mui-icon-list"></span>
+			<span class="mui-tab-label">列表</span>
+		</a>
+		<a id="tab_chat" class="mui-tab-item">
+			<span class="mui-icon mui-icon-chat"></span>
+			<span class="mui-tab-label">联系</span>
+		</a>
+		<a id="tab_my" class="mui-tab-item" >
+			<span class="mui-icon mui-icon-person"></span>
+			<span class="mui-tab-label">我的</span>
+		</a>
+	</nav>
+	
+	<script type="text/javascript" charset="utf-8">
+      	mui.init({
+      		subpages: [
+                        {  
+                            url: 'home/home.html',  
+                            id: 'tab_home',  
+                            styles: {  
+                                top: '0px',  
+                                bottom: '60px'  
+                            }  
+                        }  
+                     ],  
+            preloadPages: [
+                /* {  
+                	url: 'home/home.html',  
+                	id: 'tab_home',  
+                	styles: {  
+                		top: '0px',  
+                		bottom: '60px'  
+                	}  
+                }, */  
+				
+				{  
+                    url: 'list/list.html',  
+                    id: 'tab_list',  
+                    styles: {
+		                top: '0px',
+		                bottom: '60px'  
+                    }  
+                },
+				{
+					url: 'chat/chat.html',
+					id: 'tab_chat',
+					styles: {
+						top: '0px',
+						bottom: '60px'
+					}
+				},
+                {
+                	url: 'my/my.html',
+                	id: 'tab_my',
+                	styles: {
+                		top: '0px',
+                		bottom: '60px'
+                	}
+                }
+            ] 
+      	});
+		function plusReady(){ 
+			var tab_home, tab_list, tab_my, tab_chat;
+				mui("#nav").on("tap", "#tab_home", function(){ 
+					tab_home = plus.webview.getWebviewById("tab_home");  
+					if (null != tab_home)
+						tab_home.show();
+					else {
+						mui.openWindow({
+							url: 'index.html',
+							id: 'index'
+						});
+					}
+					
+					//mui.fire(tab_home, 'refresh');
+					tab_list = plus.webview.getWebviewById('tab_list');
+					if (null != tab_list)
+						tab_list.hide();
+					tab_chat = plus.webview.getWebviewById('tab_chat');
+					if (null != tab_chat)
+						tab_chat.hide();
+					tab_my = plus.webview.getWebviewById("tab_my");
+					if (null != tab_my)
+						tab_my.hide(); 
+				});  
+				mui("#nav").on("tap", "#tab_list", function(){ 
+					tab_list = plus.webview.getWebviewById('tab_list');
+					tab_list.show();
+					
+				}); 
+				mui("#nav").on("tap", "#tab_chat", function(){
+					tab_chat = plus.webview.getWebviewById("tab_chat");
+					tab_chat.show(); 
+					
+				}); 
+				mui("#nav").on("tap", "#tab_my", function(){
+					tab_my = plus.webview.getWebviewById("tab_my");
+					tab_my.show(); 
+					
+				}); 
+		}
+		if(window.plus){
+			plusReady();
+		}else{
+			document.addEventListener('plusready', plusReady, false);
+		}
+		
+      	
+    </script>
+</body>
+</html>

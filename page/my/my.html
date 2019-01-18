@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>我的</title>
+	    <script src="../../js/mui.min.js"></script>
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+	    <script src="../../js/util.js"></script>
+	    <style>
+			span {
+				margin-left: 40px; 
+			}
+	    </style>
+	</head>
+	<body> 
+		<header class="mui-bar mui-bar-nav" style="text-align: center;padding: 14px;">
+           	我的
+       	</header> 
+		<div class="container">
+			<ul class="mui-table-view" style="margin-top: 50px;">
+				<li class="mui-table-view-cell mui-media imgHeaderField">
+					<a href="javascript:void(0);" class="mui-navigate-right">
+						<img id="imgHeader" class="mui-media-object mui-pull-left" src="">
+					</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a href="javascript:void(0);">签名
+						<input class="label" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<div style="height: 20px;background: #EFEFF4;"></div>
+				<li class="mui-table-view-cell" style="height: 50px;">
+					<a href="javascript:void(0);" >
+						昵称
+						<input class="nickName" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a href="javascript:void(0);">用户名
+						<input class="userName" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<li class="mui-table-view-cell sexField">
+					<a href="javascript:void(0);"  class="mui-navigate-right">性别
+						<input class="sex" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<div style="height: 20px;background: #EFEFF4;"></div>
+				<li class="mui-table-view-cell birthdayField">
+					<a href="javascript:void(0);" class="mui-navigate-right">生日
+						<input class="birthday" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a href="javascript:void(0);">手机
+						<input class="phone" type="text" style="border: 0;height: inherit;">
+					</a>
+				</li>
+				<li class="mui-table-view-cell">
+					<a href="javascript:void(0);">email
+						<input class="email" type="text" style="border: 0;height: inherit;">
+					</a> 
+				</li>
+				<li class="mui-table-view-cell mui-media myRecord">
+					<img class="mui-media-object mui-pull-left" src="../../images/history.png">
+					<div style="margin-top: 10px;" class="mui-media-body">
+						我的录音
+					</div>
+				</li>
+			</ul>
+		</div>
+		<div class="mui-card" style="display: none;z-index: 1000;position: fixed;top: 20vh;left: 3vw;">
+			<div class="mui-card-header">预览头像</div>
+			<div class="mui-card-content" style="text-align: center;">
+				<img src="" style="width: 90vw; height: 60vh;" class="previewImg">
+			</div>	
+			<div class="mui-card-footer">
+				<a href="javascript:void(0)" class="mui-btn mui-btn-danger changeBtn">更换</a>
+				<a href="javascript:void(0)" class="mui-btn mui-btn-danger closeBtn">关闭</a>
+			</div>
+		</div>
+	</body> 
+	<script>
+		mui.init({
+			pullRefresh : {
+			container: ".container",
+			down : { 
+				style: 'circle',
+				color: '#2BD009', 
+				height: '50px',
+				range: '100px', 
+				offset: '0px', 
+				auto: false,
+				callback: function () {
+					memberId = plus.storage.getItem("memberId");
+					getImageHeader(memberId);
+					getMemInfo(memberId);
+					mui('.container').pullRefresh().endPulldownToRefresh();
+					mui.toast('加载完成', {duration: 100});
+				} 
+			}
+			}
+		});
+		let mask = mui.createMask(() => {});
+		function plusReady () {
+			memberId = plus.storage.getItem('memberId');
+			let urlAndPort = getHttpUtrlAndPort();
+			
+			getImageHeader(memberId);
+			getMemInfo(memberId);
+			document.querySelector('.imgHeaderField').addEventListener('tap', function () {
+				mask.show();
+				document.querySelector(".mui-card").style.display = 'block';
+				document.querySelector(".previewImg").src = this.children[0].children[0].src;
+			});
+			document.querySelector('.closeBtn').addEventListener('tap', () => {
+				document.querySelector(".mui-card").style.display = 'none';
+				mask.close();
+			});
+			function getFromGallery () {
+				plus.gallery.pick((filePath) => {
+					plus.io.resolveLocalFileSystemURL(filePath, (entry) => {
+						document.querySelector(".previewImg").src = entry.toLocalURL();
+						setTimeout(() => {
+							document.querySelector(".mui-card").style.display = 'none';
+							mask.close();
+						}, '1000');
+						document.querySelector("#imgHeader").src = entry.toLocalURL();
+						let task = plus.uploader.createUpload(`${getHttpUtrlAndPort()}app/updateImgHeader`, {method: "POST"}, (t, status) => {
+							if (status == 200) {
+								plus.nativeUI.alert('上传成功', '提示', '关闭');
+								console.log(t.data);
+							}
+								
+							else 
+								plus.nativeUI.alert('上传失败', '提示', '关闭');
+						});
+						task.addFile(filePath, {key: 'imgHeader'});
+						task.addData('memberId', plus.storage.getItem("memberId"));
+						task.start();
+					}, (e) => {
+						plus.nativeUI.alert('找不到文件', '警告', '关闭');
+					});
+				}, (e) => {
+					plus.nativeUI.alert(`文件选取失败，原因：${e.message}`, '警告', '关闭');
+				}, {
+					maximum: 1
+				});
+			}
+			document.querySelector('.myRecord').addEventListener('tap', () => {
+				mui.openWindow({
+					url: 'recordList.html',
+					id: 'recordList'
+				});
+			});
+			document.querySelector(".changeBtn").addEventListener('tap', () => {
+                plus.nativeUI.actionSheet({
+					title: '选择相片',
+					buttons: [{
+						title: '从相册选取'
+					}],
+					cancel: '取消'
+				}, function (e) {
+					switch (e.index) {
+						case 1 :
+							getFromGallery();
+						break;
+					}
+				});
+			});
+			mui('ul').on('tap', '.birthdayField', () => {
+				plus.nativeUI.pickDate((e) => {
+					let date= e.date;
+					date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+					mui('.birthday')[0].value = date;
+					updateMember(memberId, 'birthday', new Date(date), plus.storage.getItem("cookie_id"));
+				}, (e) => {
+					console.log(e.message);
+				});
+				
+			});
+			mui('ul').on('tap', '.sexField', () => {
+				plus.nativeUI.actionSheet({title: '选择性别', buttons: [{title: '男'}, {title: '女'}], cancel: '取消'}, (e) => {
+					switch (e.index) {
+						case 1 :
+							mui('.sex')[0].value = '男';
+							updateMember(memberId, 'sex', 0, plus.storage.getItem("cookie_id"));
+							break;
+						case 2 :
+							mui('.sex')[0].value = '女';
+							updateMember(memberId, 'sex', 1, plus.storage.getItem("cookie_id"));
+							break;
+					}
+				});
+				
+			});
+			[].forEach.call(document.querySelectorAll("li"), function (value, index) {
+				if (index == 0 || index == document.querySelectorAll("li").length - 1) return false;
+				let className = value.children[0].children[0].getAttribute('class');
+				if (className.indexOf('sex') > -1 || className.indexOf('birthday') > -1)
+					return false;
+				value.children[0].children[0].addEventListener('keydown', function (e) {
+					let cookie_id = plus.storage.getItem('cookie_id');
+					switch (e.keyCode) {
+						case 13 :
+							updateMember (memberId, className, this.value, cookie_id);
+							break;
+					}
+				});
+			});
+		}if (window.plus)
+			plusReady();
+		else
+			document.addEventListener('plusready', plusReady, false);
+		function updateMember(memberId, key, arg, cookie_id) {
+			let obj = {id: memberId};
+			obj[key] = arg;
+			mui.ajax(`${getHttpUtrlAndPort()}app/updateMemberByCondition`, {
+				data: obj,
+				dataType: 'json',
+				header: {'Cookie': cookie_id},
+				success: function (res) {
+					if (res.success)
+						mui.toast(`${key}保存成功`);							
+					else
+						mui.toast(`${key}保存成功`);	
+				},
+				error: function (res) {
+					mui.alert('服务器请求出错', '提示');
+				}
+			});
+		}
+		function getImageHeader (memberId) {
+			mui.ajax({
+				url: getHttpUtrlAndPort() + 'getMemberImg',
+				data: {memberId: memberId},
+				dataType: 'json', 
+				async: true,
+				success: function (res) {
+					mui('#imgHeader')[0].src = "data:image/png;base64," + res; 
+				}
+			});
+		}
+		function getMemInfo (memberId) {
+			mui.ajax(`${getHttpUtrlAndPort()}getMemberInfo`, {
+				data: {id: memberId},
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					let member = res.data[0];
+					plus.storage.setItem("memberId", member.id);
+					[].forEach.call(document.querySelectorAll("li"), function (value, index) {
+						if (index == 0) return false;
+						Object.keys(member).forEach((val, key) => {
+							if (index == document.querySelectorAll("li").length - 1)
+								return true;
+							let attr = value.children[0].children[0].getAttribute('class');
+							if (val == attr) 
+								value.children[0].children[0].value = member[val] == '' || 
+								member[val] == null ? '用户很懒，啥也没留下' : 
+								member[val].length > 30 ? member[val].substring(0, 30) + '...' : member[val];
+						});
+						
+					});
+				}
+			});
+		}
+	</script>
+</html>

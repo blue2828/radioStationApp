@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>查看资料</title>
+    <script src="../../js/mui.min.js"></script>
+    <script src="../../js/util.js"></script>
+    <link href="../../css/mui.min.css" rel="stylesheet"/>
+    <style>
+		span {
+			margin-left: 40px;
+		}
+	</style>
+    	
+</head>
+
+<body> 
+	<ul class="mui-table-view" style="margin-top: 50px;">
+	    <li class="mui-table-view-cell mui-media">
+	        <a href="javascript:void(0);" >
+				头像
+	            <img id="imgHeader" style="float: right;" class="mui-media-object mui-pull-left" src="">
+	        </a>
+	    </li>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);" >签名
+				<span class="label"></span>
+			</a>
+	    </li>
+	    <div style="height: 20px;background: #EFEFF4;"></div>
+	    <li class="mui-table-view-cell" style="height: 50px;">
+	        <a href="javascript:void(0);" >
+	        	昵称
+	        	<span class="nickName"></span>
+	        </a>
+	    </li>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);">用户名
+				<span class="userName"></span>
+			</a>
+	    </li>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);">性别
+				<span class="sex"></span>
+			</a>
+	    </li>
+	    <div style="height: 20px;background: #EFEFF4;"></div>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);" >生日
+				<span class="birthday"></span>
+			</a>
+	    </li>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);">手机
+				<span class="phone"></span>
+			</a>
+			
+	    </li>
+	    <li class="mui-table-view-cell">
+	        <a href="javascript:void(0);">email
+				<span class="email"></span>
+			</a>
+	    </li>
+	</ul>
+	
+</body>
+	<script>
+		mui.init();
+		function plusReady(){
+			let thisWebView = plus.webview.currentWebview();
+			let memberId = thisWebView.memberId;
+			console.log("=====memberId====" + memberId);
+			let urlAndPort = getHttpUtrlAndPort();
+			mui.ajax(`${urlAndPort}getMemberInfo`, {
+				data: {id: memberId},
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					let member = res.data[0];
+					mui.ajax(`${urlAndPort}getMemberImg`, {
+						data: {memberId: memberId},
+						dataType: 'json',
+						async: false,
+						success: function (result) {
+							mui('#imgHeader')[0].src = `data:image/png;base64,${result}`;
+						}
+					});
+					[].forEach.call(document.querySelectorAll("li"), function (value, index) {
+						if (index == 0) return false;
+						Object.keys(member).forEach((val, key) => {
+							let attr = value.children[0].children[0].getAttribute('class');
+							if (val == attr) 
+								value.children[0].children[0].innerHTML = member[val] == '' || 
+								member[val] == null ? '用户很懒，啥也没留下' : member[val];
+						});
+						
+					});
+				}
+			});
+		} 
+		if(window.plus){
+			plusReady();
+		}else{
+			document.addEventListener('plusready', plusReady, false);
+		}
+		
+	</script>
+</html>

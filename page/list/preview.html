@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>查看点播详情</title>
+    <link href="../../css/mui.min.css" rel="stylesheet"/>	
+</head>
+<style> 
+</style>
+<body> 
+	<header class="mui-bar mui-bar-nav" style="text-align: center;padding: 14px;">
+		点播详情
+	</header>
+	<div id="container" style="margin-top: 50px;">
+		<ul class="mui-table-view">
+			<li class="mui-table-view-cell mui-media memberInfo">
+        <a href="javascript:;" class="mui-navigate-right ">
+            <img class="mui-media-object mui-pull-left imgHeader" src="">
+            <div class="mui-media-body demander">
+                <p class='mui-ellipsis'>触摸查看个人资料</p>
+            </div>
+        </a>
+			</li>
+			<li class="mui-table-view-cell toSb">赠送对象：</li>
+			<li class="mui-table-view-cell email">赠送对象邮箱：</li>
+			<li class="mui-table-view-cell songField">
+				<span style="float: left;" class="song">分享的歌曲：</span>
+				<img id="songType" src="" style="width: 128px; height: 128px;margin-left: 40px;">
+			</li>
+			<li class="mui-table-view-cell musicName">歌曲名：</li>
+			<li class="mui-table-view-cell textField">
+				<span style="float: left;" class="song">分享的文件：</span>
+				<img id="textType" src="" style="width: 128px; height: 128px;margin-left: 40px;">
+			</li>
+			<li class="mui-table-view-cell demandTime">点播时间： </li>
+			<li class="mui-table-view-cell demandDesc">赠词： </li>
+		</ul>
+		<div class="audio" style="z-index: 10000;display: none;position: absolute;left: 60px; top: 248px;">
+        <div class="closeMusicBtn" style="background-color: #F1F3F4;cursor: pointer;width: 30px;height: 30px; margin-left: 92%;"><img class="closeImg" width="29" height="29" src="../../images/closeBtn.png"></div>
+        <audio id="player" preload="auto" src="" controls="controls" autoplay />
+    </div>
+	</div>
+	<div style="display: none;position: fixed; top:50px;z-index: 1000;width: 100%;" class="mui-card prewContainer" >
+        <!--页眉，放置标题-->
+        <div class="mui-card-header">预览效果</div>
+        <!--内容区-->
+        <div class="mui-card-content" style="min-height: 200px;">内容区</div>
+            <article class="content"></article>
+        <div class="mui-card-footer" style="padding-left: 80%">
+					<a href="#" class="mui-btn mui-btn-danger mui-closeBtn" >关闭</a>
+        </div>
+    </div>
+</body>
+	<script src="../../js/mui.min.js"></script>
+	<script src="../../js/util.js"></script>
+	<script type="text/javascript" charset="utf-8">
+		mui.init({
+			preloadPages : [
+				{
+					url: '../index.html',
+					id: 'index'
+				}
+			]
+		});
+		var mask = mui.createMask(() => {});
+		function plusReady(){
+			const thisWebView = plus.webview.currentWebview();
+			plus.webview.getWebviewById("tab_home");
+			let info = JSON.parse(thisWebView.info);
+			let imgSrc = thisWebView.imgSrc;
+			switch (imgSrc.indexOf("mp3") > -1) {
+				case true :
+					mui('#songType')[0].src = imgSrc;
+					setAudioShow(1);
+					setTextShow(0);
+					break;
+				default :
+					switch (imgSrc.endsWith("file-text.png")) {
+						case true :
+							mui('#textType')[0].src = imgSrc;
+							setAudioShow(0);
+							setTextShow(1);
+							break;
+						default :
+							mui('#textType')[0].src = imgSrc;
+							setAudioShow(0);
+					}
+			}
+			let urlAndPort = getHttpUtrlAndPort();
+			let demandTimeField = mui('.demandTime')[0].innerHTML;
+			let toSbField = mui('.toSb')[0].innerText;
+			document.querySelector('.toSb').innerHTML = `${toSbField}${info.toSb == '' ? '无' : info.toSb}`;
+			mui('.demandTime')[0].innerHTML = `${demandTimeField}${info.demandTime}`;
+			let emailField = mui('.email')[0].innerHTML;
+			mui('.email')[0].innerHTML = `${emailField}${info.email}`;
+			let musicNameField = mui('.musicName')[0].innerHTML;
+			mui('.musicName')[0].innerHTML = `${musicNameField}${info.musicName}`;
+			let demandDescField = mui('.demandDesc')[0].innerHTML; 
+			mui('.demandDesc')[0].innerHTML = `${demandDescField}${info.demandDesc}`;
+			
+			mui.ajax(`${urlAndPort}getMemberImg`, {
+				data: {memberId: info.m_id},
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					document.querySelector(".imgHeader").src = `data:image/png;base64,${res}`;
+				}
+			});	
+			document.querySelector(".demander").innerText = `点播人:${info.userName == '' ? '  无' : '  ' + info.userName}`;
+			mui('body').on('tap', '#songType', function () {
+				switch (info.play_url) {
+					case '' :
+						mui('#player')[0].src = urlAndPort + 'previewFile?isMusic=true&fileId=' + info.dl_fileId;
+						break;
+					default :
+						mui('#player')[0].src = info.play_url;
+				}
+				setAudioShow(3);
+				mask.show();
+				document.querySelector('#player').play();
+				let infoCopy = info;
+				infoCopy.demandTime = new Date(infoCopy['demandTime']);
+				infoCopy.id = infoCopy.dl_id;
+				infoCopy.memberId = infoCopy.m_id;
+				infoCopy.fileId = infoCopy.dl_fileId;
+				updateState(infoCopy, plus.storage.getItem("cookie_id"));
+				
+			});
+			mui('body').on('tap', '.memberInfo', () => {
+				mui.openWindow({
+					url: 'memberInfo.html',
+					id: 'memberInfo',
+					extras: {
+						memberId: info.m_id
+					}
+				});
+			});
+			mui('body').on('tap', '.closeMusicBtn', () => {
+				setAudioShow(2);
+				document.querySelector('#player').pause();
+				mask.close();
+			});
+			mui('body').on('tap', '#textType', function() {
+				switch (this.src.endsWith("pdf.png")) {
+					case true : 
+						location.href = urlAndPort + 'page/webviewPreviewForWx.html?imgsrc=../../images/file-pdf.png&fileid=' + info.dl_fileId;
+						break;
+					default : 
+						mui('.prewContainer')[0].style.display = 'block';
+						mask.show();
+						mui.ajax(`${urlAndPort}previewFile`, {
+              dataType: "text",
+              data: {fileId: info.dl_fileId, isTxt: true},
+              contentType: "text/html;charset=gb2312",
+							async: false,
+              success : function(res) {
+                  document.querySelector('.content').innerText = res;
+              }
+            });
+				}
+				let infoCopy = info;
+				infoCopy.demandTime = new Date(infoCopy['demandTime']);
+				/*mui.alert(infoCopy.demandTime);*/
+				infoCopy.id = infoCopy.dl_id;
+				infoCopy.memberId = infoCopy.m_id;
+				infoCopy.fileId = infoCopy.dl_fileId;
+				updateState(infoCopy, plus.storage.getItem("cookie_id"));
+			});
+			mui('body').on('tap', '.mui-closeBtn', () => {
+				mui('.prewContainer')[0].style.display = 'none';
+				mask.close();
+			});
+		}
+		if(window.plus){
+			plusReady();
+		}else{
+			document.addEventListener('plusready', plusReady, false);
+		}
+	/* 	mui.plusReady(function () {
+			
+		}); */
+		// version 0:隐藏歌曲文件区域 1:显示歌曲文件区域 2: 隐藏播放器 3 显示播放器
+		 function setAudioShow (version) { 
+      switch (version) {
+          case 0 :
+					document.querySelector('.songField').style.display = 'none';
+					document.querySelector('.musicName').style.display = 'none';
+              break;
+          case 1 :
+					document.querySelector('.songField').style.display = '';
+					document.querySelector('.musicName').style.display = '';
+              break;
+			case 2 :
+					document.querySelector('.audio').style.display = 'none';
+					document.querySelector('.musicName').style.display = 'none';
+					break;
+			case 3 :
+					document.querySelector('.audio').style.display = '';
+					document.querySelector('.musicName').style.display = '';
+					break;
+      }
+    }
+		function setTextShow (version) {
+			switch (version) {
+					case 0 :
+							document.querySelector('.textField').style.display = 'none';
+							break;
+					case 1 :
+							document.querySelector('.textField').style.display = '';
+							break;
+			}
+		}
+		function updateState (obj, cookie_id) {
+			mui.ajax(`${getHttpUtrlAndPort()}app/onlyUpdateStateOnDemand`, {
+				data: obj,
+				dataType: 'json',
+				header: {"Cookie": cookie_id},
+				success: function (res) {
+					switch (res.success) {
+						case false :
+							console.log('更改当前点播记录为已播状态失败');
+							break;
+						default :
+							console.log('更改当前点播记录为已播状态成功');
+					}
+				}
+			});
+		}
+		
+	</script>
+</html>

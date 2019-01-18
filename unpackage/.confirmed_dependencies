@@ -1,0 +1,60 @@
+{
+	"index.html": {
+		"refer": [
+			"new_file.html"
+		]
+	},
+	"page/login.html": {
+		"refer": [
+			"page/index.html"
+		]
+	},
+	"page/index.html": {
+		"resources": [
+			"page/home/home.html"
+		],
+		"refer": [
+			"page/list/list.html",
+			"page/setting/setting.html",
+			"page/home/home.html",
+			"page/my/my.html",
+			"page/chat/chat.html"
+		]
+	},
+	"page/my/my.html": {
+		"refer": [
+			"page/my/recordList.html"
+		]
+	},
+	"page/my/recordList.html": {
+		"refer": [
+			"page/login.html"
+		]
+	},
+	"page/home/home.html": {
+		"refer": [
+			"page/login.html",
+			"page/home/mp3.html"
+		]
+	},
+	"page/list/list.html": {
+		"refer": [
+			"page/list/preview.html"
+		]
+	},
+	"page/list/preview.html": {
+		"refer": [
+			"page/index.html"
+		]
+	},
+	"page/chat/chat.html": {
+		"refer": [
+			"page/login.html"
+		]
+	},
+	"page/home/mp3.html": {
+		"refer": [
+			"page/home/lyrics.html"
+		]
+	}
+}

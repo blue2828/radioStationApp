@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	    <title>联系用户</title>
+	    <link href="../../css/mui.min.css" rel="stylesheet"/>
+	</head>
+	<style>
+		.chatField {
+			margin-top: 20px;
+			min-height: 8vh;
+			min-width: 40vw;
+			max-width: 70vw;
+			background: #1E9FFF;
+			margin-left: 10vh;
+			border-radius: 20px;
+			word-wrap: break-word;
+			padding-left: 20px;
+			line-height: 8vh;
+			opacity: 0.6;
+		}
+	</style>
+	<body>
+		<div class="container">
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-back" href="/index.html"></a>
+			<h1 class="mui-title">联系用户</h1>
+		</header>
+		<img id="bg" src="../../images/musicBg.jpg" style="z-index: -1000;position: fixed;top: 0;opacity: 0.4;width: 100vw;height: 100vh;">
+		<div class="mui-scroll-wrapper" style="height: 80vh;top: 50px;margin-top: 50px;">
+			<div class="mui-scroll">
+				
+			</div>
+		</div>
+		 <div id="inputChat" style="height: 12vh;position: fixed;top: 88vh;width: 100vw;">
+			<textarea placeholder="说下你想说的话" id="chatVal" rows="2" style="opacity: 0.6;margin-top: 4vh;float: left;width: 86vw;"></textarea>
+			 <button id="sendBtn" style="height: 8vh;margin-top: 4vh;float: right;" class="mui-btn mui-btn-danger">发送</button>
+		</div>
+		</div>
+	</body>
+	<script src="../../js/mui.js"></script> 
+	<script src="../../js/util.js"></script>
+	<script type="text/javascript">
+		mui.init({
+			gestureConfig: {
+				tap: true,
+				longtap: true,
+				doubletap: true
+			},
+			pullRefresh : {
+			container: ".container",
+			down : { 
+				style: 'circle',
+				color: '#2BD009', 
+				height: '50px',
+				range: '100px', 
+				offset: '0px', 
+				auto: false,
+				callback: function () {
+						memberId = plus.storage.getItem('memberId');
+						cookie_id = plus.storage.getItem('cookie_id');
+						imgBase64Str = getImgHeader(memberId, cookie_id);
+						mui('.container').pullRefresh().endPulldownToRefresh();
+						mui.toast('加载完成', {duration: 100});
+					} 
+				}
+			}
+		});
+		
+		let ws = new WebSocket(`${getWsUtrlAndPort()}pushUrl`);
+		ws.onopen = function () {
+			console.log("已经连接到websocket服务器");
+		};
+		ws.onclose = function () {
+			console.log("websocket已经关闭");
+			/* ws = new WebSocket(`${getWsUtrlAndPort()}pushUrl`); */
+		};
+		ws.onmessage = function (data) {
+			data = data.data;
+			if (data.indexOf("chat") > -1) { 
+				let obj = JSON.parse(data); 
+				switch (obj.chat.isWx) {
+					case true :
+						let wxImg = getImgHeader(obj.chat.wxMemId, cookie_id);
+						let htmlStr = `<div class="chatContainer">
+											<img style="border-radius: 50%;float: left;width: 40px;height: 40px" src=${wxImg}>
+											<div class="chatField">${obj.chat.chatContent}</div>
+										</div>`;
+						let chatDom = document.querySelectorAll('.chatContainer');
+						let domLength = document.querySelectorAll('.chatContainer').length;
+						switch (domLength) {
+							case 0 :
+								document.querySelector('.mui-scroll').insertAdjacentHTML('afterbegin', htmlStr);
+								break;
+							default :
+								chatDom[domLength - 1].insertAdjacentHTML('afterend', htmlStr);
+						}
+						
+						break;
+				}
+			}
+			
+		};
+		function plusReady () {
+			memberId = plus.storage.getItem('memberId');
+			cookie_id = plus.storage.getItem('cookie_id');
+			mui('.mui-scroll-wrapper').scroll({
+				deceleration: 0.0005, 
+				scrollY: true 
+			});
+			mui('body').on('doubletap', '.mui-scroll-wrapper', function () {
+				mui.confirm('确定要清屏吗', '提示', ['取消', '清屏'], e => {
+					switch (e.index) {
+						case 1 :
+							while (document.querySelector('.mui-scroll').children.length > 0) {
+								document.querySelector('.mui-scroll').removeChild(document.querySelector('.mui-scroll').children[document.querySelector('.mui-scroll').children.length - 1]);
+							}
+							break;
+					}
+				});
+				
+			});
+			imgBase64Str = getImgHeader(memberId, cookie_id);
+			mui('#inputChat').on('tap', '#sendBtn', () => {	
+				if (isLogined() <= 0) {
+					mui.alert('清先登录!');
+					mui.openWindow({
+						url: "../login.html",
+						id: 'login'
+					});
+					return;
+				}
+				let chatVal = mui('#chatVal')[0].value;
+				let domStr = `<div class="chatContainer">
+												<img style="border-radius: 50%;float: right;width: 40px;height: 40px" src=${imgBase64Str}>
+												<div class="chatField">${chatVal}</div>
+											</div>`;
+				let chatDomObj = document.querySelectorAll('.chatContainer');
+				let objLength = document.querySelectorAll('.chatContainer').length;
+				switch (objLength) {
+					case 0 :
+						document.querySelector('.mui-scroll').insertAdjacentHTML('afterbegin', domStr);
+						break;
+					default :
+						chatDomObj[objLength - 1].insertAdjacentHTML('afterend', domStr);
+				}
+				let obj = {'chatContent': chatVal, 'isWx': false, "appMemId": memberId};
+				obj = {chat: obj}
+				ws.send(JSON.stringify(obj));
+			});
+		}
+		if(window.plus) 
+			plusReady();
+		else {
+			document.addEventListener('plusready', plusReady, false);
+		}
+			
+			
+	</script>
+</html>
